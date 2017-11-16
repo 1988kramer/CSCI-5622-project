@@ -53,8 +53,7 @@ def resample_x(x_data, samples, m):
 
 
 # shuffles data and splits into test and training sets
-def shuffle_data(x_data, y_data, split):
-	m = np.size(y_data)
+def shuffle_data(x_data, y_data, split, m):
 	# shuffle x and y values
 	indices = np.array(range(0, m))
 	np.random.shuffle(indices) 
@@ -103,7 +102,7 @@ if __name__ == "__main__":
 	x_data = mean_resample_x(x_data, m)
 	#x_data = np.reshape(x_data, (m,-1)) # reshape to 2-D vector
 	x_data = preprocessing.scale(x_data) # normalize data
-	train_x, train_y, test_x, test_y = shuffle_data(x_data, y_data, 0.85)
+	train_x, train_y, test_x, test_y = shuffle_data(x_data, y_data, 0.85, m)
 	classifyLogistic(train_x, train_y, test_x, test_y)
 	print()
 	classifySVM(train_x, train_y, test_x, test_y)
