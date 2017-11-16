@@ -11,8 +11,8 @@ import numpy as np
 
 
 def save_files(filenames):
-	x_data = np.zeros(shape=(1361,10,16))
-	y_data = np.zeros(1361)
+	x_data = np.zeros(shape=(2111,10,16))
+	y_data = np.zeros(2111)
 	i = 0
 	for file in filenames:
 		file = 'data/' + file;
