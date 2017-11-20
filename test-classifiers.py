@@ -23,7 +23,7 @@ def load_data(xfile, yfile, split):
 	m = y_data.size
 	x_data = np.reshape(x_data, (m,-1)) # reshape to 2-D vector
 
-	x_data = preprocessing.scale(x_data) # normalize data
+	x_data = preprocessing.scale(x_data, axis=1) # normalize data
 
 	#shuffle x and y values
 	indices = np.array(range(0, m))

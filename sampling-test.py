@@ -103,10 +103,10 @@ if __name__ == "__main__":
 	x_data, y_data = load_data(xfile, yfile)
 	m = np.size(x_data, 0)
 	#x_data = resample_x(x_data, 5, m)
-	#x_data = mean_x(x_data, m)
-	x_data = mean_resample_x(x_data, m)
+	x_data = mean_x(x_data, m)
+	#x_data = mean_resample_x(x_data, m)
 	#x_data = np.reshape(x_data, (m,-1)) # reshape to 2-D vector
-	x_data = preprocessing.scale(x_data) # normalize data
+	x_data = preprocessing.scale(x_data, axis=0) # normalize data
 	train_x, train_y, test_x, test_y = shuffle_data(x_data, y_data, 0.85, m)
 	classifyLogistic(train_x, train_y, test_x, test_y)
 	print()
