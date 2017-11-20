@@ -5,6 +5,10 @@
 # examples have no defined beginning and end
 # examples are randomly up or downsampled to have length of 0.5 to 2s
 
+# currently getting pretty poor accuracy
+# could be due to the difference between training and testing methods
+# try altering the training data so it better reflects the test case
+
 import numpy as np
 from numpy.random import randint
 from sklearn import preprocessing
