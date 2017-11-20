@@ -1,3 +1,8 @@
+# Andrew Kramer
+# test-classifiers.py
+
+# tests two simple classifiers on examples of uniform length
+
 # labels:
 # 0 - fist
 # 1 - down

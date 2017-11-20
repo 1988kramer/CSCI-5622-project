@@ -1,3 +1,8 @@
+# Andrew Kramer
+# sampling-test.py
+
+# tests various data sampling and normalization schemes
+
 # labels:
 # 0 - fist
 # 1 - down
