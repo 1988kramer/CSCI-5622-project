@@ -15,6 +15,14 @@ from sklearn import preprocessing
 from sklearn.svm import SVC
 from scipy.signal import resample
 from sklearn.metrics import classification_report
+
+import keras
+from keras.models import Sequential
+from keras.layers import Dense 
+from keras.layers import Activation
+from keras.utils import to_categorical
+from keras import backend as K
+
 import matplotlib.pyplot as plt
 
 # loads sensor data and labels from the specified files
@@ -45,17 +53,52 @@ def load_data(xfile, yfile, split):
 
 # defines and trains an SVM on the given training data and labels
 # returns the trained SVM
-def train_model(train_x, train_y):
-	# get mean for each training sample
-	train_x = np.mean(train_x, axis=1)
+def train_svm(train_x, train_y, win_sz):
 
-	# normalize training data
-	train_x = preprocessing.scale(train_x, axis=1)
+	parsed_x, parsed_y = parse_stream(train_x, train_y, win_sz)
 
 	# define and train classifier
 	svm = SVC(kernel='poly', degree=3, C=100, decision_function_shape='ovo')
-	svm.fit(train_x, train_y)
+	svm.fit(parsed_x, np.ravel(parsed_y))
 	return svm
+
+def train_neural_net(train_x, train_y, win_sz):
+	parsed_x, parsed_y = parse_stream(train_x, train_y, win_sz)
+	cat_y = to_categorical(parsed_y, num_classes=5)
+
+	model = Sequential()
+	model.add(Dense(512, input_dim=16, activation='relu'))
+	model.add(Dense(512, activation='relu'))
+	model.add(Dense(512, activation='relu'))
+	model.add(Dense(512, activation='relu'))
+	model.add(Dense(5, activation='softmax'))
+	model.compile(loss='categorical_crossentropy', 
+				  optimizer='sgd', 
+				  metrics=['accuracy'])
+
+	model.fit(parsed_x, cat_y, epochs=35, batch_size=32)
+
+	return model
+
+def test_neural_net(neural_net, test_x, test_y, win_sz):
+	parsed_x, parsed_y = parse_stream(test_x, test_y, win_sz)
+	cat_y = to_categorical(parsed_y, num_classes=5)
+
+	acc = neural_net.evaluate(parsed_x, cat_y)
+	print("neural net accuracy: ", acc)
+
+def parse_stream(stream_x, stream_y, win_sz):
+	str_len = np.size(stream_x, 0)
+	parsed_x = np.zeros((str_len - win_sz + 1, 16))
+	parsed_y = np.zeros((str_len - win_sz + 1, 1))
+	up = int(np.ceil(win_sz / 2))
+	dn = int(np.floor(win_sz / 2))
+	for i in range(dn, str_len - up):
+		sample = np.mean(stream_x[i-dn:i+up, :], axis=0)
+		sample = preprocessing.scale(sample)
+		parsed_x[i - dn] = sample
+		parsed_y[i - dn] = stream_y[i]
+	return parsed_x, parsed_y
 
 def create_stream(test_x, test_y):
 	min_samples = 5
@@ -71,31 +114,19 @@ def create_stream(test_x, test_y):
 		stream_y = np.append(stream_y, next_y, axis=0)
 	return stream_x, stream_y
 
-def classify_stream(stream_x, svm, win_sz=4):
-	str_len = np.size(stream_x,0)
-	stream_pred = np.zeros((str_len,1))
-	up = int(np.ceil(win_sz / 2))
-	dn = int(np.floor(win_sz / 2))
-	for i in range(dn, str_len - dn):
-		sample = np.mean(stream_x[i-dn:i+up, :], axis=0)
-		sample = preprocessing.scale(sample)
-		next_pred = svm.predict(np.reshape(sample, (1,-1)))
-		stream_pred[i] = next_pred
+def classify_stream_svm(stream_x, stream_y, svm, win_sz):
+	parsed_x, parsed_y = parse_stream(stream_x, stream_y, win_sz)
+	pred_y = svm.predict(parsed_x)
+	get_accuracy(pred_y, np.ravel(parsed_y))
 
-	#stream_pred[str_len-win_sz:str_len] = stream_pred[str_len-win_sz]
-	return stream_pred
 
-def get_accuracy(stream_pred, stream_y):
-	# naive implementation: calculate hamming distance and divide by length
-	hamming = 0
-	for (pred, ac) in zip(stream_pred, stream_y):
-		if (pred != ac):
-			hamming += 1;
-	acc = 1 - (hamming / np.size(stream_pred,0))
+def get_accuracy(y_pred, y_test):
+
+	print(classification_report(y_pred, y_test))
 
 	# plot classifications
-	plt.plot(stream_pred[0:200])
-	plt.plot(stream_y[0:200])
+	plt.plot(y_pred[0:200])
+	plt.plot(y_test[0:200])
 	plt.ylabel('predicted label')
 	#plt.show()
 	return acc
@@ -103,14 +134,15 @@ def get_accuracy(stream_pred, stream_y):
 if __name__ == "__main__":
 	xfile = "x_data.npy"
 	yfile = "y_data.npy"
+	window_size = 5
 	print("loading data")
 	train_x, train_y, test_x, test_y = load_data(xfile, yfile, 0.8)
 	print("creating data streams")
-	stream_x, stream_y = create_stream(test_x, test_y)
+	train_x_str, train_y_str = create_stream(train_x, train_y)
+	test_x_str, test_y_str = create_stream(test_x, test_y)
 	print("training model")
-	svm = train_model(train_x, train_y)
+	svm = train_svm(train_x_str, train_y_str, window_size)
+	#neural_net = train_neural_net(train_x_str, train_y_str, window_size)
 	print("predicting from data stream")
-	stream_pred = classify_stream(stream_x, svm, 10)
-	print("calculating accuracy")
-	acc = get_accuracy(stream_pred, stream_y)
-	print("accuracy: ", acc)
+	stream_pred = classify_stream_svm(test_x_str, test_y_str, svm, window_size)
+	#test_neural_net(neural_net, test_x_str, test_y_str, window_size)
