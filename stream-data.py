@@ -50,6 +50,18 @@ def load_data(xfile, yfile, split):
 	test_y = shuf_y[split_index:m]
 	return train_x, train_y, test_x, test_y
 
+# loads data that has already been shuffled and organized into streams
+def load_stream_data(xfile, yfile, split):
+	x_stream = np.load(xfile)
+	y_stream = np.load(yfile)
+	m = y_stream.size
+	split_index = int(split * m)
+	train_x = x_stream[0:split_index]
+	test_x  = x_stream[split_index:m]
+	train_y = y_stream[0:split_index]
+	test_y  = y_stream[split_index:m]
+	return train_x, train_y, test_x, test_y
+
 
 # defines and trains an SVM on the given training data and labels
 # returns the trained SVM
@@ -58,31 +70,31 @@ def train_svm(train_x, train_y, win_sz):
 	parsed_x, parsed_y = parse_stream(train_x, train_y, win_sz)
 
 	# define and train classifier
-	svm = SVC(kernel='poly', degree=3, C=100, decision_function_shape='ovo')
+	svm = SVC(kernel='poly', degree=3, C=1000, decision_function_shape='ovo')
 	svm.fit(parsed_x, np.ravel(parsed_y))
 	return svm
 
-def train_neural_net(train_x, train_y, win_sz):
+def train_neural_net(train_x, train_y, win_sz, classes):
 	parsed_x, parsed_y = parse_stream(train_x, train_y, win_sz)
-	cat_y = to_categorical(parsed_y, num_classes=5)
+	cat_y = to_categorical(parsed_y, num_classes=classes)
 
 	model = Sequential()
 	model.add(Dense(512, input_dim=16, activation='relu'))
+	#model.add(Dense(512, activation='relu'))
 	model.add(Dense(512, activation='relu'))
 	model.add(Dense(512, activation='relu'))
-	model.add(Dense(512, activation='relu'))
-	model.add(Dense(5, activation='softmax'))
+	model.add(Dense(classes, activation='softmax'))
 	model.compile(loss='categorical_crossentropy', 
 				  optimizer='sgd', 
 				  metrics=['accuracy'])
 
-	model.fit(parsed_x, cat_y, epochs=35, batch_size=32)
+	model.fit(parsed_x, cat_y, epochs=20, batch_size=32)
 
 	return model
 
-def test_neural_net(neural_net, test_x, test_y, win_sz):
+def test_neural_net(neural_net, test_x, test_y, win_sz, classes):
 	parsed_x, parsed_y = parse_stream(test_x, test_y, win_sz)
-	cat_y = to_categorical(parsed_y, num_classes=5)
+	cat_y = to_categorical(parsed_y, num_classes=classes)
 
 	acc = neural_net.evaluate(parsed_x, cat_y)
 	print("neural net accuracy: ", acc)
@@ -129,20 +141,20 @@ def get_accuracy(y_pred, y_test):
 	plt.plot(y_test[0:200])
 	plt.ylabel('predicted label')
 	#plt.show()
-	return acc
+
 
 if __name__ == "__main__":
-	xfile = "x_data.npy"
-	yfile = "y_data.npy"
+	xfile = "x_stream.npy"
+	yfile = "y_stream.npy"
 	window_size = 5
 	print("loading data")
-	train_x, train_y, test_x, test_y = load_data(xfile, yfile, 0.8)
-	print("creating data streams")
-	train_x_str, train_y_str = create_stream(train_x, train_y)
-	test_x_str, test_y_str = create_stream(test_x, test_y)
+	train_x, train_y, test_x, test_y = load_stream_data(xfile, yfile, 0.8)
+	#print("creating data streams")
+	#train_x_str, train_y_str = create_stream(train_x, train_y)
+	#test_x_str, test_y_str = create_stream(test_x, test_y)
 	print("training model")
-	svm = train_svm(train_x_str, train_y_str, window_size)
-	#neural_net = train_neural_net(train_x_str, train_y_str, window_size)
+	svm = train_svm(train_x, train_y, window_size)
+	#neural_net = train_neural_net(train_x, train_y, window_size, 6)
 	print("predicting from data stream")
-	stream_pred = classify_stream_svm(test_x_str, test_y_str, svm, window_size)
-	#test_neural_net(neural_net, test_x_str, test_y_str, window_size)
+	stream_pred = classify_stream_svm(test_x, test_y, svm, window_size)
+	#test_neural_net(neural_net, test_x, test_y, window_size, 6)
