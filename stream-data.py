@@ -79,13 +79,13 @@ def train_neural_net(train_x, train_y, win_sz, classes):
 	cat_y = to_categorical(parsed_y, num_classes=classes)
 
 	model = Sequential()
-	model.add(Dense(256, input_dim=16, activation='relu'))
+	model.add(Dense(512, input_dim=16, activation='relu'))
 	#model.add(Dense(512, activation='relu'))
 	model.add(Dense(512, activation='relu'))
-	model.add(Dense(256, activation='relu'))
+	model.add(Dense(512, activation='relu'))
 	model.add(Dense(classes, activation='softmax'))
 	model.compile(loss='categorical_crossentropy', 
-				  optimizer='sgd', 
+				  optimizer='adam', 
 				  metrics=['accuracy'])
 
 	model.fit(parsed_x, cat_y, epochs=20, batch_size=16)
