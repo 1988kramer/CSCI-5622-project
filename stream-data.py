@@ -79,16 +79,16 @@ def train_neural_net(train_x, train_y, win_sz, classes):
 	cat_y = to_categorical(parsed_y, num_classes=classes)
 
 	model = Sequential()
-	model.add(Dense(512, input_dim=16, activation='relu'))
+	model.add(Dense(256, input_dim=16, activation='relu'))
 	#model.add(Dense(512, activation='relu'))
 	model.add(Dense(512, activation='relu'))
-	model.add(Dense(512, activation='relu'))
+	model.add(Dense(256, activation='relu'))
 	model.add(Dense(classes, activation='softmax'))
 	model.compile(loss='categorical_crossentropy', 
 				  optimizer='sgd', 
 				  metrics=['accuracy'])
 
-	model.fit(parsed_x, cat_y, epochs=20, batch_size=32)
+	model.fit(parsed_x, cat_y, epochs=20, batch_size=16)
 
 	return model
 
@@ -153,8 +153,8 @@ if __name__ == "__main__":
 	#train_x_str, train_y_str = create_stream(train_x, train_y)
 	#test_x_str, test_y_str = create_stream(test_x, test_y)
 	print("training model")
-	svm = train_svm(train_x, train_y, window_size)
-	#neural_net = train_neural_net(train_x, train_y, window_size, 6)
+	#svm = train_svm(train_x, train_y, window_size)
+	neural_net = train_neural_net(train_x, train_y, window_size, 6)
 	print("predicting from data stream")
-	stream_pred = classify_stream_svm(test_x, test_y, svm, window_size)
-	#test_neural_net(neural_net, test_x, test_y, window_size, 6)
+	#stream_pred = classify_stream_svm(test_x, test_y, svm, window_size)
+	test_neural_net(neural_net, test_x, test_y, window_size, 6)
