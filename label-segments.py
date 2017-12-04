@@ -72,7 +72,7 @@ def create_stream(examples, labels, num_rows):
 	str_index = 0 # current index in the data stream
 	for i in range(0,len(examples)):
 		ex_len = np.size(examples[i],0) # overall length of example
-		n_len = int(ex_len/6) # length of neutral gesture before 
+		n_len = int(ex_len/8) # length of neutral gesture before 
 								# and after labeled gesture occurs
 		# add labels to label stream
 		label_stream[str_index + n_len:str_index + ex_len - n_len] = labels[i];

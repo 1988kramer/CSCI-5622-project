@@ -58,7 +58,7 @@ def classifyLogistic(train_x, train_y, test_x, test_y):
 	print(classification_report(test_y, pred))
 
 def classifySVM(train_x, train_y, test_x, test_y):
-	poly = SVC(kernel='poly', degree=3, C=100, decision_function_shape='ovo')
+	poly = SVC(kernel='poly', degree=3, C=1000, decision_function_shape='ovo')
 	poly.fit(train_x, train_y)
 	pred = poly.predict(test_x)
 	print("Polynomial SVM results: ")

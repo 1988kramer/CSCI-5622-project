@@ -11,7 +11,7 @@
 
 import numpy as np
 from numpy.random import randint
-from sklearn import preprocessing
+from sklearn import preprocessing, linear_model
 from sklearn.svm import SVC
 from scipy.signal import resample
 from sklearn.metrics import classification_report
@@ -88,7 +88,7 @@ def train_neural_net(train_x, train_y, win_sz, classes):
 				  optimizer='adam', 
 				  metrics=['accuracy'])
 
-	model.fit(parsed_x, cat_y, epochs=20, batch_size=16)
+	model.fit(parsed_x, cat_y, epochs=10, batch_size=16)
 
 	return model
 
@@ -131,6 +131,21 @@ def classify_stream_svm(stream_x, stream_y, svm, win_sz):
 	pred_y = svm.predict(parsed_x)
 	get_accuracy(pred_y, np.ravel(parsed_y))
 
+def train_logistic(train_x, train_y, win_sz):
+	parsed_x, parsed_y = parse_stream(train_x, train_y, win_sz)
+	logreg = linear_model.LogisticRegression(multi_class='multinomial', 
+											 solver='saga', C=.01, 
+											 max_iter=5000)
+
+	logreg.fit(parsed_x, np.ravel(parsed_y))
+	return logreg
+	
+
+def classify_logistic(test_x, test_y, logreg, win_sz):
+	parsed_x, parsed_y = parse_stream(test_x, test_y, win_sz)
+	pred = logreg.predict(parsed_x)
+	print("Logistic regression results: ")
+	print(classification_report(np.ravel(parsed_y), pred))
 
 def get_accuracy(y_pred, y_test):
 
@@ -146,15 +161,23 @@ def get_accuracy(y_pred, y_test):
 if __name__ == "__main__":
 	xfile = "x_stream.npy"
 	yfile = "y_stream.npy"
-	window_size = 5
-	print("loading data")
-	train_x, train_y, test_x, test_y = load_stream_data(xfile, yfile, 0.8)
-	#print("creating data streams")
-	#train_x_str, train_y_str = create_stream(train_x, train_y)
-	#test_x_str, test_y_str = create_stream(test_x, test_y)
-	print("training model")
-	#svm = train_svm(train_x, train_y, window_size)
-	neural_net = train_neural_net(train_x, train_y, window_size, 6)
-	print("predicting from data stream")
-	#stream_pred = classify_stream_svm(test_x, test_y, svm, window_size)
-	test_neural_net(neural_net, test_x, test_y, window_size, 6)
+	window_size = 1
+	classes = 5
+	six_cat = True
+	if (six_cat):
+		train_x_str, train_y_str, test_x_str, test_y_str = load_stream_data(xfile, yfile, 0.8)
+	else:
+		train_x, train_y, test_x, test_y = load_data("x_data.npy", "y_data.npy", 0.8)
+		train_x_str, train_y_str = create_stream(train_x, train_y)
+		test_x_str, test_y_str = create_stream(test_x, test_y)
+	svm = train_svm(train_x_str, train_y_str, window_size)
+	print("svm results")
+	classify_stream_svm(test_x_str, test_y_str, svm, window_size)
+	if (six_cat):
+		classes = 6
+	neural_net = train_neural_net(train_x_str, train_y_str, window_size, classes)
+	print("neural net results")
+	test_neural_net(neural_net, test_x_str, test_y_str, window_size, classes)
+	logistic = train_logistic(train_x_str, train_y_str, window_size)
+	print("logistic results")
+	classify_logistic(test_x_str, test_y_str, logistic, window_size)
