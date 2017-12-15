@@ -97,7 +97,9 @@ def test_neural_net(neural_net, test_x, test_y, win_sz, classes):
 	cat_y = to_categorical(parsed_y, num_classes=classes)
 
 	acc = neural_net.evaluate(parsed_x, cat_y)
+	pred_y = neural_net.predict(parsed_x)
 	print("neural net accuracy: ", acc)
+	return pred_y, cat_y
 
 def parse_stream(stream_x, stream_y, win_sz):
 	str_len = np.size(stream_x, 0)
@@ -157,27 +159,33 @@ def get_accuracy(y_pred, y_test):
 	plt.ylabel('predicted label')
 	#plt.show()
 
+def from_categorical(cat):
+	return np.argmax(cat, axis=1);
+
 
 if __name__ == "__main__":
 	xfile = "x_stream.npy"
 	yfile = "y_stream.npy"
 	window_size = 1
 	classes = 5
-	six_cat = True
+	six_cat = False
 	if (six_cat):
 		train_x_str, train_y_str, test_x_str, test_y_str = load_stream_data(xfile, yfile, 0.8)
 	else:
 		train_x, train_y, test_x, test_y = load_data("x_data.npy", "y_data.npy", 0.8)
 		train_x_str, train_y_str = create_stream(train_x, train_y)
 		test_x_str, test_y_str = create_stream(test_x, test_y)
-	svm = train_svm(train_x_str, train_y_str, window_size)
-	print("svm results")
-	classify_stream_svm(test_x_str, test_y_str, svm, window_size)
+	#svm = train_svm(train_x_str, train_y_str, window_size)
+	#print("svm results")
+	#classify_stream_svm(test_x_str, test_y_str, svm, window_size)
 	if (six_cat):
 		classes = 6
 	neural_net = train_neural_net(train_x_str, train_y_str, window_size, classes)
 	print("neural net results")
-	test_neural_net(neural_net, test_x_str, test_y_str, window_size, classes)
-	logistic = train_logistic(train_x_str, train_y_str, window_size)
-	print("logistic results")
-	classify_logistic(test_x_str, test_y_str, logistic, window_size)
+	pred_y, test_y = test_neural_net(neural_net, test_x_str, test_y_str, window_size, classes)
+	np.savetxt("nn_pred.csv", from_categorical(pred_y), delimiter = ",")
+	np.savetxt("nn_test.csv", from_categorical(test_y), delimiter = ",")
+	#get_accuracy(pred_y, test_y); 
+	#logistic = train_logistic(train_x_str, train_y_str, window_size)
+	#print("logistic results")
+	#classify_logistic(test_x_str, test_y_str, logistic, window_size)
